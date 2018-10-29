@@ -2,7 +2,7 @@
 # Homework 4 Answer Key
 #
 # by Melinda Higgins, PhD
-# dated 11/13/2017
+# dated 10/21/2018
 # ===================================
 
 library(tidyverse)
@@ -11,37 +11,23 @@ library(haven)
 helpdat <- haven::read_spss("helpmkh.sav")
 
 # create subset
-# select indtot, cesd and pss_fr
+# select indtot, cesd and racegrp
 
 h1 <- helpdat %>%
-  select(indtot, mcs, racegrp)
+  select(indtot, cesd, racegrp)
 
-# recode racegrp into 3 groups
+# create a "factor" class
+# variable for racegrp
 
-h2 <- h1 %>%
-  mutate(race3 = ifelse(racegrp=="black", 0, 
-                 ifelse(racegrp=="white", 1, 2)))
+h1$racegrp.f <- as.factor(h1$racegrp)
 
-# let's also create a "factor" class
-# variable 
-
-h2$race3f <- factor(h2$race3,
-                   levels = c(0,1,2),
-                   labels = c("0: Black",
-                              "1: White",
-                              "2: Hispanic/Other"))
-
-table(h2$race3f)
+table(h1$racegrp.f)
 
 # run simple linear regression
 # using the lm
 # save the results in the fit1 object
 
-fit1 <- lm(indtot ~ mcs, data=h2)
-
-# this creates a lm object
-# which has 12 components
-class(fit1)
+fit1 <- lm(cesd ~ indtot, data=h1)
 
 # look at a summary() of the model
 summary(fit1)
@@ -56,6 +42,9 @@ plot(fit1)
 
 # reset par
 par(mfrow=c(1,1))
+
+# histogram of the residuals
+hist(fit1$residuals)
 
 # see the coefficients
 coefficients(fit1)
@@ -88,15 +77,17 @@ car::crPlots(fit1)
 car::ncvTest(fit1)
 
 # also look at the spreadLevelPlot
+# this also provides a suggestion of 
+# possible power transformation
 car::spreadLevelPlot(fit1)
 
 # this suggests a power transformation
-# of almost 4, Ynew = Y^4
-plot(h2$mcs, h2$indtot)
-abline(lm(h2$indtot ~ h2$mcs))
+# of almost 2, Ynew = Y^2
+plot(h1$indtot, h1$cesd)
+abline(lm(h1$cesd ~ h1$indtot))
 
-plot(h2$mcs, h2$indtot^4)
-abline(lm(h2$indtot^4 ~ h2$mcs))
+plot(h1$indtot, h1$cesd^2)
+abline(lm(h1$cesd^2 ~ h1$indtot))
 
 # global test of linear model assumptions
 # install gvlma package
@@ -105,7 +96,9 @@ gvmodel <- gvlma::gvlma(fit1)
 summary(gvmodel)
 
 # try with the power transformation
-fit1t <- lm(indtot^4 ~ mcs, data=h2)
+# less assumptions acceptable - don't
+# do the transformation
+fit1t <- lm(h1$cesd^2 ~ h1$indtot, data=h1)
 gvlma::gvlma(fit1t)
 par(mfrow=c(2,2))
 plot(fit1t)
@@ -114,19 +107,24 @@ par(mfrow=c(1,1))
 # one-way ANOVA
 # we can use the lm() function
 # it does "dummy" coding on the fly
-fit2.lm <- lm(indtot ~ race3f, data=h2)
+# run racegrp as either the character
+# type or as a factor - either will work
+fit2.lm <- lm(cesd ~ racegrp, data=h1)
+summary(fit2.lm)
+
+fit2.lm <- lm(cesd ~ racegrp.f, data=h1)
 summary(fit2.lm)
 
 # the aov() function
 # gives the global test for the "group" effect
-fit2.aov <- aov(indtot ~ race3f, data=h2)
+fit2.aov <- aov(cesd ~ racegrp, data=h1)
 summary(fit2.aov)
 
 # get a means plot using
 # plotmeans() from gplots package
 library(gplots)
-gplots::plotmeans(indtot ~ race3f, 
-                  data=h2)
+gplots::plotmeans(cesd ~ racegrp, 
+                  data=h1)
 
 # post hoc tests
 # Tukey HSD
@@ -137,7 +135,7 @@ TukeyHSD(fit2.aov)
 #rotate labels
 par(las=2) 
 # modify margins to get labels inside margins
-par(mar=c(5,12,4,2))
+#par(mar=c(5,12,4,2))
 plot(TukeyHSD(fit2.aov))
 
 # assess ANOVA test assumptions
@@ -149,7 +147,7 @@ car::qqPlot(fit2.aov,
 
 # barlett's test for homogenity of variances
 # note: put the formula back in
-bartlett.test(indtot ~ race3f, data=h2)
+bartlett.test(cesd ~ racegrp, data=h1)
 
 # outlier test from the car package
 car::outlierTest(fit2.aov)
