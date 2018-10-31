@@ -2,7 +2,7 @@
 # Homework 4 Answer Key
 #
 # by Melinda Higgins, PhD
-# dated 10/21/2018
+# dated 10/30/2018
 # ===================================
 
 library(tidyverse)
@@ -26,7 +26,6 @@ table(h1$racegrp.f)
 # run simple linear regression
 # using the lm
 # save the results in the fit1 object
-
 fit1 <- lm(cesd ~ indtot, data=h1)
 
 # look at a summary() of the model
@@ -49,21 +48,9 @@ hist(fit1$residuals)
 # see the coefficients
 coefficients(fit1)
 
-# ANOVA table of model fit
-# base stats r anova() function
-# type I sums of squares
-anova(fit1)
-
-# Anova() function from car package
-# type III sums of squares
-# this will be the same with only 1 predictors
-# in the model, but will be important
-# when we have more predictors
-library(car)
-car::Anova(fit1, type=3)
-
 # use the car package to get additional diagnostics
 # and plotting options
+library(car)
 
 # Durbin-Watson Test for Autocorrelated Errors
 car::durbinWatsonTest(fit1)
@@ -82,12 +69,22 @@ car::ncvTest(fit1)
 car::spreadLevelPlot(fit1)
 
 # this suggests a power transformation
-# of almost 2, Ynew = Y^2
+# of 1.639, almost 2, Ynew = Y^2
 plot(h1$indtot, h1$cesd)
 abline(lm(h1$cesd ~ h1$indtot))
 
 plot(h1$indtot, h1$cesd^2)
 abline(lm(h1$cesd^2 ~ h1$indtot))
+
+# scatterplot of fitted model
+# using the car package, add the smooth option
+car::scatterplot(cesd ~ indtot, data=h1, 
+                 smooth=TRUE)
+
+# you can also use a ggplot2 approach
+ggplot(h1, aes(indtot, cesd)) +
+  geom_point() +
+  stat_smooth(method = lm)
 
 # global test of linear model assumptions
 # install gvlma package
@@ -137,6 +134,20 @@ par(las=2)
 # modify margins to get labels inside margins
 #par(mar=c(5,12,4,2))
 plot(TukeyHSD(fit2.aov))
+
+# alternate post hoc tests in r
+# see https://stats.idre.ucla.edu/r/faq/how-can-i-do-post-hoc-pairwise-comparisons-in-r/ 
+
+# no error rate adjustment for 
+# multiple pairwise comparisons
+# no error-rate correction
+pairwise.t.test(h1$cesd, h1$racegrp, p.adj = "none")
+
+# using Bonferroni error-rate correction
+pairwise.t.test(h1$cesd, h1$racegrp, p.adj = "bonf")
+
+# using the Holm error-rate correction
+pairwise.t.test(h1$cesd, h1$racegrp, p.adj = "holm")
 
 # assess ANOVA test assumptions
 # the simulate options
