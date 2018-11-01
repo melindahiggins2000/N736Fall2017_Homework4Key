@@ -3,7 +3,6 @@ title: "Homework 4 - Answer Key"
 author: "Melinda Higgins"
 date: "October 30, 2018"
 output:
-  pdf_document: default
   html_document: default
 ---
 
